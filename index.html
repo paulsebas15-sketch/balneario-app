@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bitácora del Balneario</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/htm@3/dist/htm.umd.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background:#f0e4d0; min-height:100vh; display:flex; justify-content:center; padding:20px 12px; font-family:'Inter',sans-serif; }
+    #root { width:100%; max-width:760px; }
+    :root { --cream:#FBF3E7; --cream-dark:#F0E4D0; --teal:#1B5E63; --sun:#C98E04; --ink:#1F2A2E; --ink-soft:#5C6B6E; }
+    .bw-root { background:var(--cream); color:var(--ink); border-radius:18px; padding:22px; width:100%; }
+    .bw-loading { display:flex; flex-direction:column; align-items:center; gap:10px; padding:60px 20px; color:var(--ink-soft); }
+    .bw-spin { animation:spin 2s linear infinite; display:inline-block; font-size:28px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .bw-header { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+    .bw-header-title { display:flex; align-items:center; gap:10px; }
+    .bw-header-title h1 { font-family:'Fraunces',serif; font-size:24px; font-weight:700; line-height:1.1; }
+    .bw-header-title p { margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); }
+    .bw-counter { display:flex; flex-direction:column; align-items:flex-end; }
+    .bw-counter-num { font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:700; color:var(--teal); letter-spacing:1px; }
+    .bw-counter-label { font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+    .bw-error { background:#FBE4DD; color:#A8442D; border:1px solid #E8A688; padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px; }
+    .bw-tabs { display:flex; gap:6px; background:var(--cream-dark); padding:5px; border-radius:12px; margin-bottom:18px; }
+    .bw-tabs button { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 10px; border:none; background:transparent; border-radius:9px; font-size:13px; font-weight:500; color:var(--ink-soft); cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s; }
+    .bw-tabs button.active { background:var(--teal); color:#fff; }
+    .bw-section { display:flex; flex-direction:column; gap:16px; }
+    .bw-datebar { display:flex; align-items:center; gap:10px; }
+    .bw-datebar-btn { background:#fff; border:1px solid var(--cream-dark); width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }
+    .bw-datebar-label { display:flex; align-items:center; gap:6px; font-weight:600; font-size:14px; flex:1; }
+    .bw-today-btn { background:#fff; border:1px solid var(--cream-dark); padding:0 12px; height:32px; border-radius:8px; font-size:12px; font-weight:600; color:var(--teal); cursor:pointer; }
+    .bw-add-panel { background:#fff; border:1px solid var(--cream-dark); border-radius:14px; padding:16px; }
+    .bw-time-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:13px; color:var(--ink-soft); }
+    .bw-time-row input[type="time"] { font-family:'JetBrains Mono',monospace; border:1px solid var(--cream-dark); border-radius:7px; padding:5px 8px; font-size:13px; background:var(--cream); color:var(--ink); }
+    .bw-cat-buttons { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .bw-cat-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 6px; border-radius:11px; border:1.5px solid var(--cat-color); background:color-mix(in srgb,var(--cat-color) 8%,white); cursor:pointer; font-family:'Inter',sans-serif; transition:transform .12s; }
+    .bw-cat-btn:hover { transform:translateY(-2px); }
+    .bw-cat-label { font-weight:600; font-size:13px; color:var(--ink); }
+    .bw-cat-sub { font-size:10.5px; color:var(--ink-soft); }
+    .bw-list-header { display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:600; color:var(--ink-soft); padding:0 2px; }
+    .bw-list-count { background:var(--cream-dark); padding:2px 9px; border-radius:20px; font-family:'JetBrains Mono',monospace; color:var(--ink); }
+    .bw-empty { display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; padding:36px 20px; color:var(--ink-soft); background:#fff; border:1.5px dashed var(--cream-dark); border-radius:14px; font-size:13.5px; }
+    .bw-tickets { display:flex; flex-direction:column; gap:8px; }
+    .bw-ticket { display:flex; align-items:center; background:#fff; border:1.5px solid var(--cream-dark); border-left:5px solid var(--cat-color); border-radius:11px; padding:10px 14px; gap:14px; }
+    .bw-ticket-divider { width:0; border-left:1.5px dashed var(--cream-dark); align-self:stretch; margin:2px 0; }
+    .bw-ticket-side { display:flex; align-items:center; gap:9px; flex:1; }
+    .bw-ticket-cat { font-size:12.5px; font-weight:600; color:var(--ink); }
+    .bw-ticket-time { font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink-soft); }
+    .bw-exit-form { display:flex; align-items:center; gap:6px; }
+    .bw-exit-form input[type="time"] { font-family:'JetBrains Mono',monospace; font-size:12px; border:1px solid var(--cream-dark); border-radius:6px; padding:3px 6px; }
+    .bw-exit-btn { background:var(--teal); border:none; color:#fff; width:28px; height:28px; border-radius:7px; cursor:pointer; font-size:14px; }
+    .bw-delete { background:transparent; border:none; color:#C9B9A0; cursor:pointer; padding:0 2px; font-size:16px; }
+    .bw-delete:hover { color:#A8442D; }
+    .bw-scope-toggle { display:flex; gap:8px; }
+    .bw-scope-toggle button { flex:1; background:#fff; border:1.5px solid var(--cream-dark); border-radius:10px; padding:9px; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; }
+    .bw-scope-toggle button.active { border-color:var(--teal); color:var(--teal); background:color-mix(in srgb,var(--teal) 7%,white); }
+    .bw-stat-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .bw-stat-card { display:flex; flex-direction:column; align-items:center; gap:3px; background:#fff; border:1px solid var(--cream-dark); border-top:3px solid var(--cat-color); border-radius:12px; padding:14px 6px; }
+    .bw-stat-num { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--ink); }
+    .bw-stat-label { font-size:11.5px; color:var(--ink-soft); }
+    .bw-charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .bw-chart-card { background:#fff; border:1px solid var(--cream-dark); border-radius:14px; padding:14px; }
+    .bw-chart-card h3 { font-family:'Fraunces',serif; font-size:14.5px; font-weight:600; margin:0 0 12px; }
+    .bw-avg-rows { display:flex; flex-direction:column; gap:8px; }
+    .bw-avg-row { display:flex; align-items:center; gap:8px; font-size:13px; padding:6px 0; border-bottom:1px solid var(--cream-dark); }
+    .bw-avg-row:last-child { border-bottom:none; }
+    .bw-avg-val { font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--ink-soft); margin-left:auto; }
+    .bw-recs { display:flex; flex-direction:column; gap:10px; }
+    .bw-rec-card { background:#fff; border:1px solid var(--cream-dark); border-left:4px solid var(--sun); border-radius:11px; padding:12px 14px; }
+    .bw-rec-tag { display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--sun); margin-bottom:5px; }
+    .bw-rec-card p { font-size:13.5px; line-height:1.5; color:var(--ink); }
+    .bw-footer { text-align:center; font-size:11px; color:var(--ink-soft); margin-top:6px; opacity:.8; }
+    @media(max-width:560px){ .bw-charts-grid,.bw-cat-buttons,.bw-stat-cards{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  const { useState, useEffect, useCallback, useMemo } = React;
+  const html = htm.bind(React.createElement);
+  const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+          PieChart, Pie, Cell, CartesianGrid, Legend } = Recharts;
+
+  const CATS = [
+    { key:"nino",         label:"Niño",        sub:"0–12 años",  icon:"👶", color:"#D97A52" },
+    { key:"adulto",       label:"Adulto",       sub:"13–59 años", icon:"👤", color:"#1B5E63" },
+    { key:"adulto_mayor", label:"Adulto mayor", sub:"60+ años",   icon:"🧓", color:"#C98E04" },
+  ];
+  const DAYS_LU = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const DAYS_OR = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+
+  const todayStr  = () => new Date().toISOString().slice(0,10);
+  const nowTime   = () => new Date().toTimeString().slice(0,5);
+  const shiftDate = (d,n) => { const dt=new Date(d+"T00:00:00"); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); };
+  const dateLabel = (d) => { const dt=new Date(d+"T00:00:00"); const s=dt.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}); return s.charAt(0).toUpperCase()+s.slice(1); };
+  const dowName   = (d) => DAYS_LU[new Date(d+"T00:00:00").getDay()];
+  const minBetw   = (t1,t2) => { const [h1,m1]=t1.split(":").map(Number); const [h2,m2]=t2.split(":").map(Number); return h2*60+m2-(h1*60+m1); };
+  const fmtMin    = (m) => { if(m==null)return"—"; const h=Math.floor(m/60),mm=m%60; return h>0?`${h}h ${mm}min`:`${mm}min`; };
+  const catInfo   = (k) => CATS.find(c=>c.key===k);
+  const lsGet     = (k) => { try{ const r=localStorage.getItem(k); return r?JSON.parse(r):null; }catch{ return null; } };
+  const lsSet     = (k,v) => { try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch{ return false; } };
+
+  function App() {
+    const [selDate,  setSelDate]  = useState(todayStr());
+    const [allDates, setAllDates] = useState([]);
+    const [allVisits,setAllVisits]= useState({});
+    const [tab,      setTab]      = useState("registro");
+    const [entryTime,setEntryTime]= useState(nowTime());
+    const [exitDraft,setExitDraft]= useState({});
+    const [scope,    setScope]    = useState("dia");
+    const [loading,  setLoading]  = useState(true);
+    const [error,    setError]    = useState(null);
+
+    useEffect(()=>{
+      try {
+        const dates = lsGet("visit-days") ?? [];
+        const map = {};
+        dates.forEach(d=>{ map[d]=lsGet(`visits:${d}`)??[]; });
+        setAllDates(dates); setAllVisits(map);
+      } catch { setError("No se pudieron cargar los datos."); }
+      finally { setLoading(false); }
+    },[]);
+
+    const persist = useCallback((date,nv)=>{
+      setAllVisits(p=>({...p,[date]:nv}));
+      if(!lsSet(`visits:${date}`,nv)){ setError("No se pudo guardar."); return; }
+      setAllDates(p=>{ if(p.includes(date))return p; const nd=[...p,date].sort(); lsSet("visit-days",nd); return nd; });
+      setError(null);
+    },[]);
+
+    const visits = allVisits[selDate]||[];
+
+    const addVisit = k => {
+      const v={id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,category:k,entryTime:entryTime||nowTime(),exitTime:null};
+      persist(selDate,[...visits,v].sort((a,b)=>a.entryTime.localeCompare(b.entryTime)));
+    };
+    const markExit = id => { const t=exitDraft[id]||nowTime(); persist(selDate,visits.map(v=>v.id===id?{...v,exitTime:t}:v)); };
+    const delVisit = id => persist(selDate,visits.filter(v=>v.id!==id));
+
+    const flat   = useMemo(()=>Object.entries(allVisits).flatMap(([d,l])=>l.map(v=>({...v,date:d}))),[allVisits]);
+    const src    = scope==="dia"?visits:flat;
+    const counts = useMemo(()=>CATS.map(c=>({...c,count:src.filter(v=>v.category===c.key).length})),[src]);
+
+    const hourly = useMemo(()=>{
+      const b={};for(let h=6;h<=22;h++)b[h]=0;
+      src.forEach(v=>{ const h=parseInt(v.entryTime,10); if(b[h]!==undefined)b[h]++; });
+      return Object.entries(b).map(([h,count])=>({hour:`${h}h`,count}));
+    },[src]);
+
+    const pieData = useMemo(()=>counts.filter(c=>c.count>0).map(c=>({name:c.label,value:c.count,color:c.color})),[counts]);
+
+    const avgStay = useMemo(()=>CATS.map(c=>{
+      const w=src.filter(v=>v.category===c.key&&v.exitTime);
+      if(!w.length)return{...c,avg:null};
+      return{...c,avg:Math.round(w.reduce((s,v)=>s+minBetw(v.entryTime,v.exitTime),0)/w.length)};
+    }),[src]);
+
+    const dowStats = useMemo(()=>{
+      const acc={};
+      DAYS_OR.forEach(d=>acc[d]={day:d,total:0,nino:0,adulto:0,adulto_mayor:0});
+      Object.entries(allVisits).forEach(([date,list])=>{
+        const dow=dowName(date);
+        list.forEach(v=>{ acc[dow].total++; acc[dow][v.category]=(acc[dow][v.category]||0)+1; });
+      });
+      return acc;
+    },[allVisits]);
+
+    const recs = useMemo(()=>{
+      const r=[];
+      const days=DAYS_OR.map(d=>dowStats[d]).filter(v=>v.total>0);
+      if(days.length<2)return r;
+      days.forEach(v=>{
+        const shares=CATS.map(c=>({label:c.label,share:v[c.key]/v.total}));
+        const top=shares.sort((a,b)=>b.share-a.share)[0];
+        if(top.share>=0.4)r.push({day:v.day,text:`Los ${v.day.toLowerCase()} predomina "${top.label.toLowerCase()}" (${Math.round(top.share*100)}%). Ideal para una promoción para ese grupo.`});
+      });
+      const sorted=[...days].sort((a,b)=>b.total-a.total);
+      if(sorted.length>=2&&sorted[0].day!==sorted[sorted.length-1].day){
+        const[busy,quiet]=[sorted[0],sorted[sorted.length-1]];
+        r.push({day:quiet.day,text:`${quiet.day} es el día con menos visitas (vs ${busy.day}). Un descuento podría equilibrar la ocupación.`});
+      }
+      const peak=[...hourly].sort((a,b)=>b.count-a.count)[0];
+      if(peak&&peak.count>0)r.push({day:"Todos los días",text:`La hora pico es ${peak.hour}. Un precio reducido antes o después ayuda a repartir el aforo.`});
+      return r;
+    },[dowStats,hourly]);
+
+    if(loading) return html`<div class="bw-root bw-loading"><span class="bw-spin">☀️</span><p>Cargando…</p></div>`;
+
+    return html`
+      <div class="bw-root">
+        <header class="bw-header">
+          <div class="bw-header-title">
+            <span style="font-size:26px">☀️</span>
+            <div>
+              <h1>Bitácora del Balneario</h1>
+              <p>Registro y estadísticas de visitantes</p>
+            </div>
+          </div>
+          <div class="bw-counter">
+            <span class="bw-counter-num">${String(allVisits[todayStr()]?.length||0).padStart(3,"0")}</span>
+            <span class="bw-counter-label">visitas hoy</span>
+          </div>
+        </header>
+
+        ${error && html`<div class="bw-error">${error}</div>`}
+
+        <nav class="bw-tabs">
+          <button class=${tab==="registro"?"active":""} onClick=${()=>setTab("registro")}>➕ Registro</button>
+          <button class=${tab==="estadisticas"?"active":""} onClick=${()=>setTab("estadisticas")}>📊 Estadísticas</button>
+          <button class=${tab==="recomendaciones"?"active":""} onClick=${()=>setTab("recomendaciones")}>💡 Recomendaciones</button>
+        </nav>
+
+        ${tab==="registro" && html`
+          <section class="bw-section">
+            <div class="bw-datebar">
+              <button class="bw-datebar-btn" onClick=${()=>setSelDate(shiftDate(selDate,-1))}>◀</button>
+              <div class="bw-datebar-label">📅 <span>${dateLabel(selDate)}</span></div>
+              <button class="bw-datebar-btn" onClick=${()=>setSelDate(shiftDate(selDate,1))}>▶</button>
+              ${selDate!==todayStr()&&html`<button class="bw-today-btn" onClick=${()=>setSelDate(todayStr())}>Hoy</button>`}
+            </div>
+
+            <div class="bw-add-panel">
+              <div class="bw-time-row">
+                🕐 <label>Hora de entrada</label>
+                <input type="time" value=${entryTime} onInput=${e=>setEntryTime(e.target.value)} />
+              </div>
+              <div class="bw-cat-buttons">
+                ${CATS.map(c=>html`
+                  <button key=${c.key} class="bw-cat-btn" style=${"--cat-color:"+c.color} onClick=${()=>addVisit(c.key)}>
+                    <span style="font-size:20px">${c.icon}</span>
+                    <span class="bw-cat-label">${c.label}</span>
+                    <span class="bw-cat-sub">${c.sub}</span>
+                  </button>
+                `)}
+              </div>
+            </div>
+
+            <div class="bw-list-header">
+              <span>Visitantes registrados</span>
+              <span class="bw-list-count">${visits.length}</span>
+            </div>
+
+            ${visits.length===0
+              ? html`<div class="bw-empty">☀️<p>Sin visitas hoy. Usa los botones de arriba para empezar.</p></div>`
+              : html`<div class="bw-tickets">
+                  ${visits.map(v=>{
+                    const c=catInfo(v.category);
+                    return html`
+                      <div key=${v.id} class="bw-ticket" style=${"--cat-color:"+c.color}>
+                        <div class="bw-ticket-side">
+                          <span style="font-size:18px">${c.icon}</span>
+                          <div>
+                            <div class="bw-ticket-cat">${c.label}</div>
+                            <div class="bw-ticket-time">Entrada · ${v.entryTime}</div>
+                          </div>
+                        </div>
+                        <div class="bw-ticket-divider"></div>
+                        <div class="bw-ticket-side">
+                          ${v.exitTime
+                            ? html`<div><div class="bw-ticket-cat">Salió</div><div class="bw-ticket-time">${v.exitTime} · ${fmtMin(minBetw(v.entryTime,v.exitTime))}</div></div>`
+                            : html`<div class="bw-exit-form">
+                                <input type="time" value=${exitDraft[v.id]||nowTime()} onInput=${e=>setExitDraft(d=>({...d,[v.id]:e.target.value}))} />
+                                <button class="bw-exit-btn" onClick=${()=>markExit(v.id)}>🚪</button>
+                              </div>`
+                          }
+                        </div>
+                        <button class="bw-delete" onClick=${()=>delVisit(v.id)}>🗑️</button>
+                      </div>
+                    `;
+                  })}
+                </div>`
+            }
+          </section>
+        `}
+
+        ${tab==="estadisticas" && html`
+          <section class="bw-section">
+            <div class="bw-scope-toggle">
+              <button class=${scope==="dia"?"active":""} onClick=${()=>setScope("dia")}>${dateLabel(selDate)}</button>
+              <button class=${scope==="historico"?"active":""} onClick=${()=>setScope("historico")}>Histórico (${allDates.length} ${allDates.length===1?"día":"días"})</button>
+            </div>
+            ${src.length===0
+              ? html`<div class="bw-empty">📈<p>Sin datos para este filtro.</p></div>`
+              : html`
+                <div class="bw-stat-cards">
+                  ${counts.map(c=>html`
+                    <div key=${c.key} class="bw-stat-card" style=${"--cat-color:"+c.color}>
+                      <span style="font-size:18px">${c.icon}</span>
+                      <span class="bw-stat-num">${c.count}</span>
+                      <span class="bw-stat-label">${c.label}</span>
+                    </div>
+                  `)}
+                </div>
+                <div class="bw-charts-grid">
+                  <div class="bw-chart-card">
+                    <h3>Composición del público</h3>
+                    <${ResponsiveContainer} width="100%" height=${220}>
+                      <${PieChart}>
+                        <${Pie} data=${pieData} dataKey="value" nameKey="name" innerRadius=${45} outerRadius=${75} paddingAngle=${2}>
+                          ${pieData.map((e,i)=>html`<${Cell} key=${i} fill=${e.color}/>`)}
+                        <//>
+                        <${Tooltip}/><${Legend}/>
+                      <//>
+                    <//>
+                  </div>
+                  <div class="bw-chart-card">
+                    <h3>Entradas por hora</h3>
+                    <${ResponsiveContainer} width="100%" height=${220}>
+                      <${BarChart} data=${hourly}>
+                        <${CartesianGrid} strokeDasharray="3 3" stroke="#E4D7BE" vertical=${false}/>
+                        <${XAxis} dataKey="hour" tick=${{fontSize:11,fill:"#5C6B6E"}} axisLine=${false} tickLine=${false}/>
+                        <${YAxis} allowDecimals=${false} tick=${{fontSize:11,fill:"#5C6B6E"}} axisLine=${false} tickLine=${false}/>
+                        <${Tooltip}/>
+                        <${Bar} dataKey="count" fill="#1B5E63" radius=${[4,4,0,0]}/>
+                      <//>
+                    <//>
+                  </div>
+                </div>
+                <div class="bw-chart-card">
+                  <h3>Duración media de la visita</h3>
+                  <div class="bw-avg-rows">
+                    ${avgStay.map(c=>html`
+                      <div key=${c.key} class="bw-avg-row">
+                        <span>${c.icon}</span>
+                        <span>${c.label}</span>
+                        <span class="bw-avg-val">${fmtMin(c.avg)}</span>
+                      </div>
+                    `)}
+                  </div>
+                </div>
+                ${scope==="historico" && html`
+                  <div class="bw-chart-card">
+                    <h3>Público por día de la semana</h3>
+                    <${ResponsiveContainer} width="100%" height=${240}>
+                      <${BarChart} data=${DAYS_OR.map(d=>dowStats[d])}>
+                        <${CartesianGrid} strokeDasharray="3 3" stroke="#E4D7BE" vertical=${false}/>
+                        <${XAxis} dataKey="day" tick=${{fontSize:11,fill:"#5C6B6E"}} axisLine=${false} tickLine=${false}/>
+                        <${YAxis} allowDecimals=${false} tick=${{fontSize:11,fill:"#5C6B6E"}} axisLine=${false} tickLine=${false}/>
+                        <${Tooltip}/><${Legend}/>
+                        <${Bar} dataKey="nino" name="Niño" stackId="a" fill="#D97A52"/>
+                        <${Bar} dataKey="adulto" name="Adulto" stackId="a" fill="#1B5E63"/>
+                        <${Bar} dataKey="adulto_mayor" name="Adulto mayor" stackId="a" fill="#C98E04" radius=${[4,4,0,0]}/>
+                      <//>
+                    <//>
+                  </div>
+                `}
+              `
+            }
+          </section>
+        `}
+
+        ${tab==="recomendaciones" && html`
+          <section class="bw-section">
+            ${recs.length===0
+              ? html`<div class="bw-empty">💡<p>Registra visitas en al menos 2 días distintos para ver recomendaciones.</p></div>`
+              : html`<div class="bw-recs">
+                  ${recs.map((r,i)=>html`
+                    <div key=${i} class="bw-rec-card">
+                      <div class="bw-rec-tag">${r.day}</div>
+                      <p>${r.text}</p>
+                    </div>
+                  `)}
+                </div>`
+            }
+          </section>
+        `}
+
+        <footer class="bw-footer">Tus datos se guardan localmente en este dispositivo.</footer>
+      </div>
+    `;
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
